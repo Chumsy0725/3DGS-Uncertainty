@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>U-3DGS: Predictive Photometric Uncertainty in Gaussian Splatting</title>
+  <link rel="stylesheet" href="static/css/style.css?v=4" />
+  <!-- MathJax for equations -->
+  <script>
+    MathJax = {
+      tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" defer></script>
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;500&display=swap" rel="stylesheet" />
+  <!-- Font Awesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <!-- Academicons for arXiv icon -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css" />
+</head>
+<body>
+
+<!-- ─── HERO / HEADER ──────────────────────────────────────────────────── -->
+<section class="hero">
+  <div class="hero-body">
+    <div class="container">
+
+      <div class="venue-badge">Preprint</div>
+
+      <h1 class="title">
+        Predictive Photometric Uncertainty in<br>
+        Gaussian Splatting for Novel View Synthesis
+      </h1>
+
+      <div class="authors">
+        <span class="author-block">Chamuditha Jayanga Galappaththige<sup>1,2*</sup>,</span>
+        <span class="author-block">Thomas Gottwald<sup>3*</sup>,</span>
+        <span class="author-block">Peter Stehr<sup>3*</sup>,</span>
+        <span class="author-block">Edgar Heinert<sup>4</sup>,</span>
+        <span class="author-block">Niko Suenderhauf<sup>1,2</sup>,</span>
+        <span class="author-block">Dimity Miller<sup>1,2</sup>,</span>
+        <span class="author-block">Matthias Rottmann<sup>4</sup></span>
+      </div>
+
+      <div class="affiliations" style="line-height:1.9;">
+        <sup>1</sup>&nbsp;QUT Centre for Robotics, Australia &nbsp;&nbsp;
+        <sup>2</sup>&nbsp;ARIAM Hub, Australia &nbsp;&nbsp;
+        <sup>3</sup>&nbsp;University of Wuppertal, Germany &nbsp;&nbsp;
+        <sup>4</sup>&nbsp;University of Osnabrück, Germany
+        <br><small style="opacity:.65;">* Equally contributed</small>
+      </div>
+
+      <div class="links">
+        <a class="btn btn-dark" href="#" title="Paper PDF">
+          <i class="fas fa-file-pdf"></i>&nbsp; Paper
+        </a>
+        <a class="btn btn-dark" href="#" title="arXiv">
+          <i class="ai ai-arxiv"></i>&nbsp; arXiv
+        </a>
+        <a class="btn btn-dark" href="#" title="GitHub Code">
+          <i class="fab fa-github"></i>&nbsp; Code (Coming Soon)
+        </a>
+        <a class="btn btn-dark" href="#bibtex">
+          <i class="fas fa-quote-right"></i>&nbsp; BibTeX
+        </a>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ─── VIDEO ──────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <video autoplay loop muted class="full-width-img">
+      <source src="static/video.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</section>
+
+<!-- ─── ABSTRACT ──────────────────────────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="container narrow">
+    <h2 class="section-title">Abstract</h2>
+    <p class="abstract-text">
+      Recent advances in 3D Gaussian Splatting have enabled impressive photorealistic novel view
+      synthesis. However, to transition from a pure rendering engine to a reliable spatial map for
+      autonomous agents and safety-critical applications, knowing <em>where</em> the representation
+      is uncertain is as important as the rendering fidelity itself.
+    </p>
+    <p class="abstract-text">
+      We bridge this critical gap by introducing a lightweight, <strong>plug-and-play framework</strong>
+      for pixel-wise, view-dependent predictive uncertainty estimation. Our post-hoc method formulates
+      uncertainty as a <strong>Bayesian-regularized linear least-squares</strong> optimization over
+      reconstruction residuals. This architecture-agnostic approach extracts a per-primitive uncertainty
+      channel without modifying the underlying scene representation or degrading baseline visual fidelity.
+    </p>
+    <p class="abstract-text">
+      Crucially, we demonstrate that providing this actionable reliability signal successfully translates
+      3D Gaussian Splatting into a trustworthy spatial map, further improving state-of-the-art performance
+      across three critical downstream perception tasks: <strong>active view selection</strong>,
+      <strong>pose-agnostic scene change detection</strong>, and
+      <strong>pose-agnostic anomaly detection</strong>.
+    </p>
+  </div>
+</section>
+
+<!-- ─── HERO FIGURE ────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <figure class="hero-figure">
+      <img src="static/images/hero_p1.png"
+           alt="Per-pixel uncertainty maps for novel view synthesis in 3DGS"
+           class="full-width-img" />
+      <figcaption>
+        <strong>Per-pixel Uncertainty Estimation for Novel View Synthesis.</strong>
+        Our post-hoc method generates view-dependent uncertainty maps that closely mirror regions
+        of error in the RGB render. Bright regions indicate high predicted uncertainty, which
+        accurately aligns with true rendering errors across diverse 3DGS scenes.
+      </figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- ─── KEY HIGHLIGHTS ────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Highlights</h2>
+    <div class="highlights-grid">
+      <div class="highlight-card">
+        <div class="highlight-icon"><i class="fas fa-plug"></i></div>
+        <h3>Plug-and-Play</h3>
+        <p>Architecture-agnostic — integrates with <em>any</em> 3DGS variant without modifying the base model or its training pipeline.</p>
+      </div>
+      <div class="highlight-card">
+        <div class="highlight-icon"><i class="fas fa-bolt"></i></div>
+        <h3>Minimal Overhead</h3>
+        <p>Only ~13% additional training time versus vanilla 3DGS, far less than competing approaches that require &gt;100% overhead.</p>
+      </div>
+      <div class="highlight-card">
+        <div class="highlight-icon"><i class="fas fa-chart-line"></i></div>
+        <h3>State-of-the-Art UE</h3>
+        <p>3× higher Pearson correlation and &lt;½ the AUSE (DSSIM) compared to the best existing method on Mip-NeRF360.</p>
+      </div>
+      <div class="highlight-card">
+        <div class="highlight-icon"><i class="fas fa-tasks"></i></div>
+        <h3>Downstream Impact</h3>
+        <p>Consistent improvements across active view selection, scene change detection, and anomaly detection.</p>
+      </div>
+    </div>
+  </div>
+</section>
+<!-- ─── VIDEO ──────────────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <video autoplay loop muted class="full-width-img">
+      <source src="static/video.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+</section>
+<!-- ─── METHOD ────────────────────────────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="container">
+    <h2 class="section-title">Method</h2>
+    <p class="section-desc">
+      Our approach learns a per-primitive, view-dependent uncertainty channel directly from training-view
+      reconstruction residuals via a lightweight linear least-squares formulation.
+    </p>
+
+    <!-- Error factors figure -->
+    <div class="subfig-row" style="margin-bottom: 2.5rem;">
+      <figure style="max-width: 680px; margin: 0 auto;">
+        <img src="static/images/error_types.png"
+             alt="Reconstruction residual types in 3DGS"
+             class="full-width-img rounded" />
+        <figcaption>
+          Reconstruction residuals capture both imperfect geometry (e.g., under-reconstructed vegetation)
+          and limited view-dependent appearance (e.g., reflections), providing a natural signal for uncertainty.
+        </figcaption>
+      </figure>
+    </div>
+
+    <!-- Overview figure -->
+    <figure style="margin: 2rem 0 2.5rem;">
+      <img src="static/images/overview.png"
+           alt="U-3DGS method overview"
+           class="full-width-img rounded" />
+    </figure>
+
+    <!-- Method overview panels -->
+    <h3 class="subsection-title">Method Overview</h3>
+    <div class="method-panels">
+      <div class="method-step">
+        <div class="step-number">1</div>
+        <h4>Train 3DGS</h4>
+        <p>A standard 3DGS model is trained to completion. Our method requires no changes to this step.</p>
+      </div>
+      <div class="method-arrow"><i class="fas fa-arrow-right"></i></div>
+      <div class="method-step">
+        <div class="step-number">2</div>
+        <h4>Compute Residuals</h4>
+        <p>Per-pixel reconstruction residuals $L_x = (1-\lambda)L^1_x + \lambda L^{\text{DSSIM}}_x$ are computed on all training views.</p>
+      </div>
+      <div class="method-arrow"><i class="fas fa-arrow-right"></i></div>
+      <div class="method-step">
+        <div class="step-number">3</div>
+        <h4>Least-Squares Optimization</h4>
+        <p>A per-primitive uncertainty channel $u_k$ is learned by minimizing $\| y - Au \|_2^2$ with Bayesian $L^2$ regularization.</p>
+      </div>
+      <div class="method-arrow"><i class="fas fa-arrow-right"></i></div>
+      <div class="method-step">
+        <div class="step-number">4</div>
+        <h4>Render Uncertainty</h4>
+        <p>Uncertainty maps are rendered for any novel viewpoint: $U(x) = \sum_k u_k(d)\,\alpha_k(x)\,T_k(x)$.</p>
+      </div>
+    </div>
+
+    <!-- Bayesian Regularization -->
+    <div class="info-box">
+      <h4><i class="fas fa-brain"></i>&nbsp; Bayesian-Inspired Regularization</h4>
+      <p>
+        In sparse-view settings, 3DGS can overfit training views, yielding near-zero residuals even in
+        poorly reconstructed regions. We address this by introducing an $L^2$ regularization term that
+        acts as a Gaussian prior — pulling unobserved primitive uncertainties toward a maximal uncertainty
+        level $b$:
+      </p>
+      <div class="math-display">
+        $$L' = \sum_x (L_x - U_x)^2 \;+\; \lambda_{\text{reg}} \sum_{k=1}^K \int_{S^2} (b - u_k(r))^2 \,\mathrm{d}r$$
+      </div>
+      <p>
+        This is equivalent to Bayesian inference with a Gaussian prior centered at maximal uncertainty,
+        ensuring reliable predictions even for highly novel viewpoints.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ─── RESULTS: UE IN NVS ────────────────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Results</h2>
+
+    <!-- Qualitative -->
+    <h3 class="subsection-title">Qualitative Uncertainty Estimation</h3>
+    <p class="section-desc">
+      Our uncertainty maps closely follow the true per-pixel rendering error, outperforming all baselines
+      across Mip-NeRF360, Tanks &amp; Temples, and Deep Blending datasets.
+    </p>
+    <figure>
+      <img src="static/images/qualitative_p1.png"
+           alt="Qualitative comparison of predicted uncertainty maps"
+           class="full-width-img rounded" />
+      <figcaption>
+        <strong>Qualitative comparison.</strong> Our uncertainty maps align much more closely with the ground-truth
+        error than FisherRF, Manifold, and Var3DGS baselines. Brighter regions = higher uncertainty.
+      </figcaption>
+    </figure>
+
+    <!-- Quantitative table -->
+    <h3 class="subsection-title" style="margin-top:3rem;">Quantitative Results — Novel View Synthesis UE</h3>
+    <p class="section-desc">
+      We consistently outperform all baselines across all metrics and datasets with significantly lower
+      computational overhead.
+    </p>
+    <div class="table-wrapper">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th rowspan="3">Method</th>
+            <th colspan="5">Mip-NeRF360</th>
+            <th colspan="5">Tanks &amp; Temples</th>
+            <th colspan="5">Deep Blending</th>
+          </tr>
+          <tr>
+            <th colspan="2">AUSE ↓</th>
+            <th colspan="2">Pearson ↑</th>
+            <th rowspan="2">OH&nbsp;↓&nbsp;(%)</th>
+            <th colspan="2">AUSE ↓</th>
+            <th colspan="2">Pearson ↑</th>
+            <th rowspan="2">OH&nbsp;↓&nbsp;(%)</th>
+            <th colspan="2">AUSE ↓</th>
+            <th colspan="2">Pearson ↑</th>
+            <th rowspan="2">OH&nbsp;↓&nbsp;(%)</th>
+          </tr>
+          <tr>
+            <th>L¹</th><th>DSSIM</th><th>L¹</th><th>DSSIM</th>
+            <th>L¹</th><th>DSSIM</th><th>L¹</th><th>DSSIM</th>
+            <th>L¹</th><th>DSSIM</th><th>L¹</th><th>DSSIM</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>FisherRF</td>
+            <td>0.708</td><td>0.606</td><td>-0.055</td><td>0.009</td><td>14.2</td>
+            <td>0.691</td><td>0.709</td><td>-0.087</td><td>-0.145</td><td>19.3</td>
+            <td>0.751</td><td>0.853</td><td>-0.116</td><td>-0.190</td><td>19.7</td>
+          </tr>
+          <tr>
+            <td>Manifold</td>
+            <td>0.520</td><td>0.559</td><td>0.070</td><td>-0.005</td><td>30.2</td>
+            <td>0.574</td><td>0.654</td><td>0.053</td><td>0.008</td><td>23.6</td>
+            <td>0.503</td><td>0.548</td><td>0.095</td><td>0.074</td><td>48.1</td>
+          </tr>
+          <tr>
+            <td>Var3DGS</td>
+            <td>0.558</td><td>0.495</td><td>0.118</td><td>0.160</td><td>&gt;100</td>
+            <td>0.539</td><td>0.567</td><td>0.161</td><td>0.176</td><td>&gt;100</td>
+            <td>0.588</td><td>0.671</td><td>0.106</td><td>0.006</td><td>&gt;100</td>
+          </tr>
+          <tr class="best-row">
+            <td><strong>Ours</strong></td>
+            <td><strong>0.328</strong></td><td><strong>0.214</strong></td>
+            <td><strong>0.369</strong></td><td><strong>0.547</strong></td><td><strong>12.8</strong></td>
+            <td><strong>0.299</strong></td><td><strong>0.233</strong></td>
+            <td><strong>0.427</strong></td><td><strong>0.571</strong></td><td><strong>14.0</strong></td>
+            <td><strong>0.376</strong></td><td><strong>0.356</strong></td>
+            <td><strong>0.243</strong></td><td><strong>0.244</strong></td><td><strong>13.0</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">
+      OH = training overhead as percentage of 3DGS training time. Our method achieves
+      <strong>&gt;3× higher Pearson correlation</strong> and <strong>&lt;½ AUSE (DSSIM)</strong>
+      compared to the best baseline (Var3DGS) on Mip-NeRF360, while maintaining the lowest overhead.
+    </p>
+  </div>
+</section>
+
+<!-- ─── SPARSE / NOVEL VIEW SECTION ───────────────────────────────────── -->
+<section class="section section-alt">
+  <div class="container">
+    <h3 class="section-title">UE on Highly Novel Views</h3>
+    <p class="section-desc">
+      Our Bayesian-inspired regularization ensures reliable uncertainty estimates even when the base 3DGS
+      model is trained on only 4 sparse views, outperforming FisherRF consistently across all regularization weights.
+    </p>
+    <div class="three-col">
+      <figure style="align-self:center;">
+        <img src="static/images/sparse_split.png"
+             alt="Train/test split visualization for sparse-view experiment"
+             class="full-width-img rounded" />
+        <figcaption>Training (red) vs. test (blue) camera distribution in the sparse-view setting.</figcaption>
+      </figure>
+      <figure>
+        <img src="static/images/sparse_plot_L1_p1.png"
+             alt="Sparse UE results L1"
+             class="full-width-img rounded" />
+        <figcaption>AUSE (L¹) vs. regularization weight $\lambda_{\text{reg}}$</figcaption>
+      </figure>
+      <figure>
+        <img src="static/images/sparse_plot_DSSIM_p1.png"
+             alt="Sparse UE results DSSIM"
+             class="full-width-img rounded" />
+        <figcaption>AUSE (DSSIM) vs. regularization weight $\lambda_{\text{reg}}$</figcaption>
+      </figure>
+    </div>
+
+    <!-- Sparse qualitative strip -->
+    <h4 class="subsection-title" style="margin-top: 2.5rem;">Qualitative Effect of Regularization</h4>
+    <div class="sparse-strip">
+      <div class="sparse-item">
+        <img src="static/images/sparse_gt.png" alt="Ground truth" class="strip-img" />
+        <p class="strip-label">Ground Truth</p>
+      </div>
+      <div class="sparse-item">
+        <img src="static/images/sparse_pred.png" alt="3DGS Render" class="strip-img" />
+        <p class="strip-label">3DGS Render</p>
+      </div>
+      <div class="sparse-item">
+        <img src="static/images/sparse_uq.png" alt="No regularization" class="strip-img" />
+        <p class="strip-label">$\lambda_{\text{reg}}=0$</p>
+      </div>
+      <div class="sparse-item">
+        <img src="static/images/sparse_uq_032.png" alt="Reg = 0.32" class="strip-img" />
+        <p class="strip-label">$\lambda_{\text{reg}}=0.32$</p>
+      </div>
+      <div class="sparse-item">
+        <img src="static/images/sparse_uq_1024.png" alt="Reg = 10.24" class="strip-img" />
+        <p class="strip-label">$\lambda_{\text{reg}}=10.24$</p>
+      </div>
+    </div>
+    <p class="table-note" style="margin-top:1rem;">
+      Without regularization ($\lambda_{\text{reg}}=0$), the model predicts near-zero uncertainty
+      even for poorly reconstructed regions. Bayesian regularization correctly highlights uncertain areas.
+    </p>
+  </div>
+</section>
+
+<!-- ─── DOWNSTREAM: ACTIVE VIEW SELECTION ─────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Downstream Task 1: Active View Selection</h2>
+    <p class="section-desc">
+      We use our predicted uncertainty maps to guide next-best-view selection, selecting the candidate view
+      with the highest total predicted uncertainty. Our approach consistently outperforms state-of-the-art
+      baselines on Mip-NeRF360.
+    </p>
+    <div class="two-col-asymm">
+      <figure style="align-self:center;">
+        <img src="static/images/avs_p1.png"
+             alt="Active view selection over iterations"
+             class="full-width-img rounded" />
+        <figcaption>Reconstruction quality (PSNR) over view selection iterations. Our method consistently achieves higher quality with fewer views.</figcaption>
+      </figure>
+      <div class="small-table-wrap">
+        <table class="results-table compact">
+          <thead>
+            <tr>
+              <th>Method</th><th>PSNR ↑</th><th>SSIM ↑</th><th>LPIPS ↓</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>FisherRF</td><td>20.266</td><td>0.593</td><td>0.363</td></tr>
+            <tr><td>Manifold</td><td>19.732</td><td>0.595</td><td>0.373</td></tr>
+            <tr><td>Manifold†</td><td>20.088</td><td>0.611</td><td>0.350</td></tr>
+            <tr class="best-row">
+              <td><strong>Ours</strong></td>
+              <td><strong>20.676</strong></td>
+              <td><strong>0.615</strong></td>
+              <td><strong>0.344</strong></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="table-note">Active View Selection on Mip-NeRF360 (20 selected views). † denotes using Manifold's predicted view order to guide vanilla 3DGS training.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── DOWNSTREAM: SCENE CHANGE DETECTION ────────────────────────────── -->
+<section class="section section-alt">
+  <div class="container">
+    <h2 class="section-title">Downstream Task 2: Pose-Agnostic Scene Change Detection</h2>
+    <p class="section-desc">
+      Rendering artifacts in 3DGS-based scene change detection cause false positives. We suppress these
+      by attenuating the change map with our predicted uncertainty: $\tilde{M}^k = M^k \odot (1 - M^k_{\text{unc}})$.
+    </p>
+    <figure style="margin-bottom: 2.5rem; text-align:center;">
+      <img src="static/images/UE_SCD_wp.png"
+           alt="Uncertainty-guided scene change detection qualitative results"
+           class="full-width-img rounded" />
+      <figcaption>
+        <strong>Qualitative scene change detection.</strong> Our uncertainty maps identify rendering artifacts,
+        allowing the system to suppress false positives caused by 3DGS rendering limitations rather
+        than true scene changes.
+      </figcaption>
+    </figure>
+    <div class="table-wrapper">
+      <table class="results-table">
+        <thead>
+          <tr>
+            <th rowspan="2">Metric</th>
+            <th colspan="3">Feature Diff.</th>
+            <th colspan="3">MV3DCD-ZS</th>
+            <th colspan="3">MV3DCD</th>
+            <th colspan="3">Online-SCD</th>
+          </tr>
+          <tr>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>mIoU ↑</td>
+            <td>0.278</td><td class="gain">0.359</td><td class="delta">+29.1%</td>
+            <td>0.382</td><td class="gain">0.439</td><td class="delta">+14.9%</td>
+            <td>0.470</td><td class="gain">0.498</td><td class="delta">+6.0%</td>
+            <td>0.486</td><td class="gain">0.498</td><td class="delta">+2.5%</td>
+          </tr>
+          <tr>
+            <td>F1 ↑</td>
+            <td>0.402</td><td class="gain">0.502</td><td class="delta">+24.9%</td>
+            <td>0.526</td><td class="gain">0.593</td><td class="delta">+12.7%</td>
+            <td>0.621</td><td class="gain">0.649</td><td class="delta">+4.5%</td>
+            <td>0.638</td><td class="gain">0.651</td><td class="delta">+2.1%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note">Results on the PASLCD benchmark. Our uncertainty guidance consistently improves all baselines.</p>
+  </div>
+</section>
+
+<!-- ─── DOWNSTREAM: ANOMALY DETECTION ────────────────────────────────── -->
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Downstream Task 3: Pose-Agnostic Anomaly Detection</h2>
+    <p class="section-desc">
+      We apply the same uncertainty-guided attenuation to pose-agnostic anomaly detection:
+      $\tilde{S}^k = S^k \odot (1 - M^k_{\text{unc}})$. This suppresses false anomaly activations
+      in regions where the 3DGS reference model lacks confidence.
+    </p>
+    <div class="centered-table">
+      <table class="results-table compact">
+        <thead>
+          <tr>
+            <th rowspan="2">Metric</th>
+            <th colspan="3">SplatPose</th>
+            <th colspan="3">SplatPose+</th>
+          </tr>
+          <tr>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+            <th>Base</th><th>+ Ours</th><th>Δ%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>AUROC ↑</td>
+            <td>0.929</td><td class="gain">0.939</td><td class="delta">+1.1%</td>
+            <td>0.940</td><td class="gain">0.956</td><td class="delta">+1.7%</td>
+          </tr>
+          <tr>
+            <td>AUPR ↑</td>
+            <td>0.700</td><td class="gain">0.765</td><td class="delta">+9.3%</td>
+            <td>0.761</td><td class="gain">0.798</td><td class="delta">+4.9%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="table-note" style="text-align:center;">
+      Results on MAD-Real benchmark. With our UE, SplatPose matches or surpasses its successor
+      SplatPose+, and our method advances the current state-of-the-art when applied to SplatPose+.
+    </p>
+  </div>
+</section>
+
+<!-- ─── BIBTEX ─────────────────────────────────────────────────────────── -->
+<section class="section section-alt" id="bibtex">
+  <div class="container narrow">
+    <h2 class="section-title">BibTeX</h2>
+    <pre class="bibtex"><code>@inproceedings{u3dgs2026,
+  title     = {Predictive Photometric Uncertainty in {G}aussian
+               {S}platting for Novel View Synthesis},
+  author    = {Galappaththige, Chamuditha Jayanga and Gottwald, Thomas and
+               Stehr, Peter and Heinert, Edgar and Suenderhauf, Niko and
+               Miller, Dimity and Rottmann, Matthias},
+  booktitle = {arXiv Preprint},
+  year      = {2026},
+}</code></pre>
+    <button class="copy-btn" onclick="copyBibtex()">
+      <i class="fas fa-copy"></i>&nbsp; Copy BibTeX
+    </button>
+  </div>
+</section>
+
+<!-- ─── FOOTER ─────────────────────────────────────────────────────────── -->
+<footer class="footer">
+  <div class="container">
+    <p>
+      This webpage template is inspired by
+      <a href="https://nerfies.github.io" target="_blank">Nerfies</a> and
+      <a href="https://github.com/eliahuhorwitz/Academic-project-page-template" target="_blank">Academic Project Page Template</a>.
+    </p>
+
+  </div>
+</footer>
+
+<script>
+function copyBibtex() {
+  const text = document.querySelector('.bibtex code').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-btn');
+    btn.innerHTML = '<i class="fas fa-check"></i>&nbsp; Copied!';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fas fa-copy"></i>&nbsp; Copy BibTeX';
+    }, 2000);
+  });
+}
+</script>
+
+</body>
+</html>
