@@ -1,0 +1,11 @@
+*.pyc
+.vscode
+data
+output
+output_*
+build
+submodules/simple-knn/simple_knn.egg-info
+diff_rasterization/diff_rast.egg-info
+diff_rasterization/dist
+tensorboard_3d
+screenshots
